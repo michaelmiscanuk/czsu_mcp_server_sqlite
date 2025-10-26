@@ -1,0 +1,40 @@
+[project]
+name = "czsu-mcp-server-sqlite"
+version = "1.0.0"
+description = "Standalone MCP server providing SQLite query capabilities for CZSU data"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Michael Miscanuk", email = "michael.miscanuk@gmail.com" }
+]
+
+dependencies = [
+    # FastMCP for MCP server implementation (includes FastAPI and Uvicorn)
+    "fastmcp>=2.0.0",
+    
+    # Environment variables
+    "python-dotenv>=1.0.0",
+    
+    # Starlette for custom routes (included with FastMCP but explicit for clarity)
+    "starlette>=0.45.0",
+]
+
+# SQLite is built into Python, no extra dependency needed
+
+[project.optional-dependencies]
+dev = [
+    # Development and testing
+    "pytest>=7.0.0",
+    "httpx>=0.25.0",  # For testing HTTP endpoints
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.py", "*.db", "*.md", "*.txt"]
