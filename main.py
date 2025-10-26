@@ -10,7 +10,7 @@ NO IMPORTS FROM PARENT PROJECT - This is completely standalone!
 Features:
 - Single tool: sqlite_query for executing SQL queries
 - Read-only access to SQLite Cloud database
-- FastMCP-based MCP server with HTTP transport
+- FastMCP-based MCP server with SSE transport
 - Environment-based configuration
 - Error handling and logging
 
@@ -159,7 +159,7 @@ if __name__ == "__main__":
         print("✓ SQLite Cloud connection successful")
         print(f"✓ Server port: {PORT}")
         print(f"✓ Debug mode: {'ON' if DEBUG else 'OFF'}")
-        print("✓ Transport: HTTP")
+        print("✓ Transport: SSE")
         print()
         print("Note: When deployed to FastMCP Cloud, this startup")
         print("      block is ignored and the 'mcp' object is used directly.")
@@ -169,5 +169,5 @@ if __name__ == "__main__":
 
     print("=" * 60)
 
-    # Run the FastMCP server with HTTP transport (local testing only)
-    mcp.run(transport="http", host="0.0.0.0", port=PORT)
+    # Run the FastMCP server with SSE transport (local testing only)
+    mcp.run(transport="sse", host="0.0.0.0", port=PORT)

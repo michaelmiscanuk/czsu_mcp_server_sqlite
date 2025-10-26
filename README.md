@@ -11,12 +11,12 @@ This is a standalone FastMCP server that provides SQLite query capabilities for 
 - **FastMCP 2.0** framework with native MCP protocol
 - Single tool: `sqlite_query` for executing SQL queries
 - **SQLite Cloud** database hosting (no local files needed)
-- HTTP transport for remote access
+- **SSE transport** for remote access
 - Health check endpoint
 
 - FastMCP Cloud ready (zero configuration)- Uses `@mcp.tool()` decorator for tool definition
 
-- HTTP transport for remote access
+- **SSE transport** for remote access
 
 ## Quick Start- Automatic OpenAPI documentation
 
@@ -221,7 +221,7 @@ Part of the CZSU Multi-Agent Text-to-SQL project.  - Handles all MCP protocol op
 - **Type-safe tool definitions** with Python decorators
 - **Automatic schema generation** from function signatures
 - **Built-in error handling** and validation
-- **HTTP transport** for web-based deployments
+- **SSE transport** for web-based deployments
 - **Custom routes** for additional endpoints (like health checks)
 
 ## Security Notes
