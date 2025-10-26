@@ -16,6 +16,8 @@ uv pip install .
 uv pip install .[dev]
 pip install -e .
 
+python unzip_files.py
+
 echo Checking database file...
 if not exist "data\czsu_data.db" (
     echo WARNING: Database file not found at data\czsu_data.db

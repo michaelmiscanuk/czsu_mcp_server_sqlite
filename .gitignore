@@ -47,4 +47,5 @@ Thumbs.db
 *.log
 
 # Database (optional - remove this line if you want to commit the database)
+*.db
 # data/czsu_data.db
