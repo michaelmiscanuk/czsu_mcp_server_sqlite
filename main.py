@@ -26,6 +26,7 @@ Environment Variables:
 import os
 import sqlitecloud
 import asyncio
+import json
 
 from dotenv import load_dotenv
 from fastmcp import FastMCP, Context
@@ -110,7 +111,7 @@ async def sqlite_query(query: str, ctx: Context) -> str:
     elif len(result) == 1 and len(result[0]) == 1:
         result_value = str(result[0][0])
     else:
-        result_value = str(result)
+        result_value = json.dumps(result)
 
     await ctx.info(f"Query completed, result summary: {len(result)} rows returned")
     await ctx.info(f"Query result: {result_value}")
