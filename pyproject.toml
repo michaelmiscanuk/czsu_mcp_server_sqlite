@@ -19,7 +19,7 @@ dependencies = [
     "starlette>=0.45.0",
     
     # SQLite Cloud for cloud database connectivity
-    "sqlitecloud>=1.0.0",
+    "sqlitecloud>=0.0.80",
 ]
 
 # SQLite is built into Python, no extra dependency needed
