@@ -2,14 +2,14 @@
 CZSU MCP SQLite Server - Standalone FastMCP Server for SQLite Queries
 
 This is a standalone FastMCP server that exposes SQLite query capabilities
-for the CZSU statistical database. It's designed to be deployed separately
-from the main application (e.g., on Railway.com) and accessed via HTTP.
+for the CZSU statistical database using SQLite Cloud. It's designed to be
+deployed separately from the main application and accessed via HTTP.
 
 NO IMPORTS FROM PARENT PROJECT - This is completely standalone!
 
 Features:
 - Single tool: sqlite_query for executing SQL queries
-- Read-only access to SQLite database
+- Read-only access to SQLite Cloud database
 - FastMCP-based MCP server with HTTP transport
 - Environment-based configuration
 - Error handling and logging
@@ -19,13 +19,12 @@ Usage:
 
 Environment Variables:
     PORT - Server port (default: 8100)
-    DB_PATH - Path to SQLite database (default: ./data/czsu_data.db)
+    SQLITE_CLOUD_CONNECTION_STRING - SQLite Cloud connection string (required)
     DEBUG - Enable debug logging (default: 0)
 """
 
 import os
-import sqlite3
-from pathlib import Path
+import sqlitecloud
 
 from dotenv import load_dotenv
 from fastmcp import FastMCP
@@ -36,32 +35,32 @@ load_dotenv()
 
 # Configuration
 PORT = int(os.getenv("PORT", "8100"))
-DB_PATH = os.getenv("DB_PATH", "./data/czsu_data.db")
+SQLITE_CLOUD_CONNECTION_STRING = os.getenv("SQLITE_CLOUD_CONNECTION_STRING", "")
 DEBUG = int(os.getenv("DEBUG", "0"))
 
 # Create FastMCP server
 mcp = FastMCP(
     name="CZSU-SQLite-Server",
     instructions="""
-        This server provides access to the CZSU (Czech Statistical Office) SQLite database.
+        This server provides access to the CZSU (Czech Statistical Office) SQLite Cloud database.
         Use the sqlite_query tool to execute SQL queries against the database.
         The database contains Czech statistical data organized in various tables.
     """,
 )
 
 
-def get_db_path() -> Path:
-    """Get the absolute path to the SQLite database."""
-    database_path = Path(DB_PATH)
+def get_db_connection():
+    """Get a connection to the SQLite Cloud database."""
+    if not SQLITE_CLOUD_CONNECTION_STRING:
+        raise ValueError(
+            "SQLITE_CLOUD_CONNECTION_STRING environment variable is required"
+        )
 
-    # If relative path, make it relative to this file's directory
-    if not database_path.is_absolute():
-        database_path = Path(__file__).parent / database_path
-
-    if not database_path.exists():
-        raise FileNotFoundError(f"Database not found at: {database_path}")
-
-    return database_path
+    try:
+        connection = sqlitecloud.connect(SQLITE_CLOUD_CONNECTION_STRING)
+        return connection
+    except Exception as e:
+        raise ConnectionError(f"Failed to connect to SQLite Cloud: {e}") from e
 
 
 @mcp.tool()
@@ -90,17 +89,20 @@ def sqlite_query(query: str) -> str:
     if DEBUG:
         print(f"[DEBUG] Executing query: {query}")
 
-    # Get database path
-    database_path = get_db_path()
+    # Get database connection
+    db_connection = get_db_connection()
 
     if DEBUG:
-        print(f"[DEBUG] Using database: {database_path}")
+        print("[DEBUG] Connected to SQLite Cloud")
 
-    # Execute query
-    with sqlite3.connect(str(database_path)) as conn:
-        cursor = conn.cursor()
-        cursor.execute(query)
-        result = cursor.fetchall()
+    try:
+        # Execute query
+        with db_connection:
+            cursor = db_connection.cursor()
+            cursor.execute(query)
+            result = cursor.fetchall()
+    finally:
+        db_connection.close()
 
     # Format result
     if not result:
@@ -120,10 +122,10 @@ def sqlite_query(query: str) -> str:
 async def health_check(_request):
     """Health check endpoint for monitoring."""
     try:
-        database_path = get_db_path()
+        health_connection = get_db_connection()
         # Try a simple query to verify database is accessible
-        with sqlite3.connect(str(database_path)) as conn:
-            cursor = conn.cursor()
+        with health_connection:
+            cursor = health_connection.cursor()
             cursor.execute("SELECT 1")
             cursor.fetchone()
 
@@ -131,10 +133,10 @@ async def health_check(_request):
             {
                 "status": "healthy",
                 "database": "connected",
-                "db_path": str(database_path),
+                "database_type": "SQLite Cloud",
             }
         )
-    except (FileNotFoundError, sqlite3.Error) as e:
+    except (ValueError, ConnectionError, sqlitecloud.Error) as e:
         return JSONResponse(
             {"status": "unhealthy", "database": "disconnected", "error": str(e)},
             status_code=503,
@@ -151,17 +153,19 @@ if __name__ == "__main__":
     print("=" * 60)
 
     try:
-        db_path = get_db_path()
-        print(f"✓ Database found: {db_path}")
+        # Test database connection
+        test_connection = get_db_connection()
+        test_connection.close()
+        print("✓ SQLite Cloud connection successful")
         print(f"✓ Server port: {PORT}")
         print(f"✓ Debug mode: {'ON' if DEBUG else 'OFF'}")
         print("✓ Transport: HTTP")
         print()
         print("Note: When deployed to FastMCP Cloud, this startup")
         print("      block is ignored and the 'mcp' object is used directly.")
-    except FileNotFoundError as e:
+    except (ValueError, ConnectionError, sqlitecloud.Error) as e:
         print(f"✗ ERROR: {e}")
-        print("✗ Server will not function correctly without the database!")
+        print("✗ Server will not function correctly without database connection!")
 
     print("=" * 60)
 

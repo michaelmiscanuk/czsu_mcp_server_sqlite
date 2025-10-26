@@ -1,24 +1,18 @@
-# CZSU MCP SQLite Server# CZSU MCP SQLite Server
+# CZSU MCP SQLite Cloud Server
+
+Standalone FastMCP server providing SQLite query capabilities for CZSU (Czech Statistical Office) data using SQLite Cloud.
+
+This is a standalone FastMCP server that provides SQLite query capabilities for the CZSU Multi-Agent Text-to-SQL project using **SQLite Cloud** for database hosting.
 
 
 
-Standalone FastMCP server providing SQLite query capabilities for CZSU (Czech Statistical Office) data.This is a standalone FastMCP server that provides SQLite query capabilities for the CZSU Multi-Agent Text-to-SQL project.
+## Features
 
-
-
-## Features## Purpose
-
-
-
-- **FastMCP 2.0** framework with native MCP protocolThis server is designed to be deployed to **FastMCP Cloud** (https://fastmcp.cloud) and accessed via the MCP (Model Context Protocol) using FastMCP. It exposes a single tool: `sqlite_query` that allows executing SQL queries against the CZSU SQLite database.
-
+- **FastMCP 2.0** framework with native MCP protocol
 - Single tool: `sqlite_query` for executing SQL queries
-
-- Read-only database access## Technology
-
+- **SQLite Cloud** database hosting (no local files needed)
 - HTTP transport for remote access
-
-- Health check endpointBuilt with **FastMCP 2.0+** - a modern, Pythonic way to build MCP servers:
+- Health check endpoint
 
 - FastMCP Cloud ready (zero configuration)- Uses `@mcp.tool()` decorator for tool definition
 
@@ -60,41 +54,28 @@ Server starts on `http://localhost:8100`
 
 ## Setup for Local Development
 
-### Test
-
-1. **Copy the SQLite database:**
-
-```bash   ```bash
-
-# Health check   # From main project root (if not already done)
-
-curl http://localhost:8100/health   copy data\czsu_data.db czsu_mcp_server_sqlite\data\
-
+1. **Install dependencies:**
+   ```bash
+   # Using uv (recommended - faster and better dependency resolution)
+   uv pip install .
+   
+   # Or using pip
+   pip install .
    ```
 
-# Test with FastMCP Client
+2. **Configure environment:**
+   ```bash
+   # Copy and edit .env file
+   copy .env.example .env
+   # Edit .env with your SQLite Cloud connection string
+   ```
 
-python2. **Install dependencies:**
+3. **Run server:**
+   ```bash
+   python main.py
+   ```
 
->>> from fastmcp import Client   ```bash
-
->>> import asyncio   # Using uv (recommended - faster and better dependency resolution)
-
->>> async def test():   uv pip install .
-
-...     async with Client("http://localhost:8100/mcp") as client:   
-
-...         result = await client.call_tool("sqlite_query", {"query": "SELECT 1"})   # Or using pip
-
-...         print(result)   pip install .
-
->>> asyncio.run(test())   
-
-```   # Or using requirements.txt (legacy)
-
-   pip install -r requirements.txt
-
-## Deployment   ```
+Server starts on `http://localhost:8100`
 
    
 
@@ -174,19 +155,12 @@ DEBUG=0                            # Debug mode   - Authentication: Enable or di
 
 4. **Deploy**: FastMCP Cloud will automatically:
 
-## Dependencies   - Clone your repository
+## Dependencies
 
-   - Detect dependencies from `pyproject.toml` (or `requirements.txt` if no pyproject.toml)
-
-- `fastmcp>=2.0.0` - MCP server framework   - Build your FastMCP server
-
-- `python-dotenv>=1.0.0` - Environment variables   - Deploy to a unique URL: `https://your-project-name.fastmcp.app/mcp`
-
-- `starlette>=0.45.0` - Web framework   - Monitor your repo and auto-redeploy on push to `main`
-
-
-
-SQLite is built into Python.5. **Get Your URL**: Your server will be at:
+- `fastmcp>=2.0.0` - MCP server framework
+- `python-dotenv>=1.0.0` - Environment variables
+- `starlette>=0.45.0` - Web framework
+- `sqlitecloud>=1.0.0` - SQLite Cloud connectivity
 
    ```
 
@@ -259,7 +233,8 @@ Part of the CZSU Multi-Agent Text-to-SQL project.  - Handles all MCP protocol op
 ## Environment Variables
 
 - `PORT` - Server port (default: 8100)
-- `DB_PATH` - Path to SQLite database (default: ./data/czsu_data.db)
+- `SQLITE_CLOUD_CONNECTION_STRING` - SQLite Cloud connection string (required)
+- `DEBUG` - Enable debug logging (default: 0)
 
 ## Testing
 
@@ -306,12 +281,13 @@ async with Client("https://your-project-name.fastmcp.app/mcp") as client:
 - Check Python version (needs 3.10+)
 - Verify all dependencies installed: `pip install -r requirements.txt`
 - Check if port 8100 is available
-- Verify database file exists: `data/czsu_data.db`
+- Verify SQLite Cloud connection string is set in `.env`
 
 **Database errors:**
-- Ensure `czsu_data.db` is in the `data/` folder
-- Check database file permissions
-- Verify database is not corrupted: `sqlite3 data/czsu_data.db ".schema"`
+- Check SQLite Cloud connection string format
+- Verify API key is valid
+- Check network connectivity to SQLite Cloud
+- Ensure database exists in your SQLite Cloud account
 
 ### FastMCP Cloud Deployment Issues
 
@@ -322,8 +298,8 @@ async with Client("https://your-project-name.fastmcp.app/mcp") as client:
 - Check entrypoint is exactly: `main.py:mcp`
 
 **Server starts but tool doesn't work:**
-- Check database file is committed to Git and pushed
-- Verify database path in code matches actual location
+- Check SQLite Cloud connection string is properly configured
+- Verify database exists in your SQLite Cloud account
 - Check FastMCP Cloud logs for runtime errors
 
 **Connection timeouts:**

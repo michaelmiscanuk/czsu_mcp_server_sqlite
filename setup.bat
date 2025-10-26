@@ -16,18 +16,7 @@ uv pip install .
 uv pip install .[dev]
 pip install -e .
 
-python unzip_files.py
-
-echo Checking database file...
-if not exist "data\czsu_data.db" (
-    echo WARNING: Database file not found at data\czsu_data.db
-    echo Please copy the database file from the main project:
-    echo   copy ..\data\czsu_data.db .\data\
-) else (
-    echo ✅ Database file found
-)
-
-echo Setting up VS Code workspace...
+echo Checking environment file...
 if not exist ".vscode" mkdir .vscode
 
 echo Creating .vscode\settings.json...
@@ -55,8 +44,11 @@ echo.
 echo Setup complete!
 echo ✅ VS Code settings configured automatically
 echo ✅ Virtual environment ready
+echo ✅ SQLite Cloud dependency installed
 echo.
 echo To run the server:
 echo   python main.py
+echo.
+echo Note: Make sure your .env file has the correct SQLite Cloud connection string
 echo.
 pause
