@@ -25,9 +25,10 @@ Environment Variables:
 
 import os
 import sqlitecloud
+import asyncio
 
 from dotenv import load_dotenv
-from fastmcp import FastMCP
+from fastmcp import FastMCP, Context
 from starlette.responses import JSONResponse
 
 # Load environment variables
@@ -64,7 +65,7 @@ def get_db_connection():
 
 
 @mcp.tool()
-def sqlite_query(query: str) -> str:
+async def sqlite_query(query: str, ctx: Context) -> str:
     """
     Execute a SQL query against the CZSU SQLite database.
 
@@ -86,23 +87,22 @@ def sqlite_query(query: str) -> str:
     Note:
         Only read operations are supported. Write operations will fail.
     """
-    if DEBUG:
-        print(f"[DEBUG] Executing query: {query}")
+    await ctx.info(f"Executing SQL query: {query}")
 
-    # Get database connection
-    db_connection = get_db_connection()
+    # Define sync query execution
+    def _execute_query(q):
+        db_connection = get_db_connection()
+        try:
+            with db_connection:
+                cursor = db_connection.cursor()
+                cursor.execute(q)
+                result = cursor.fetchall()
+        finally:
+            db_connection.close()
+        return result
 
-    if DEBUG:
-        print("[DEBUG] Connected to SQLite Cloud")
-
-    try:
-        # Execute query
-        with db_connection:
-            cursor = db_connection.cursor()
-            cursor.execute(query)
-            result = cursor.fetchall()
-    finally:
-        db_connection.close()
+    # Execute query in thread
+    result = await asyncio.to_thread(_execute_query, query)
 
     # Format result
     if not result:
@@ -112,8 +112,8 @@ def sqlite_query(query: str) -> str:
     else:
         result_value = str(result)
 
-    if DEBUG:
-        print(f"[DEBUG] Query result: {result_value}")
+    await ctx.info(f"Query completed, result summary: {len(result)} rows returned")
+    await ctx.info(f"Query result: {result_value}")
 
     return result_value
 
