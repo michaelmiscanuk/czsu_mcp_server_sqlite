@@ -37,7 +37,7 @@ load_dotenv()
 
 # Configuration
 PORT = int(os.getenv("PORT", "8100"))
-DATABASE_TYPE = os.getenv("DATABASE_TYPE", "sqlitecloud").lower()
+DATABASE_TYPE = os.getenv("DATABASE_TYPE", "turso").lower()
 SQLITE_CLOUD_CONNECTION_STRING = os.getenv("SQLITE_CLOUD_CONNECTION_STRING", "")
 TURSO_CONNECTION_STRING = os.getenv("TURSO_CONNECTION_STRING", "")
 DEBUG = int(os.getenv("DEBUG", "0"))
