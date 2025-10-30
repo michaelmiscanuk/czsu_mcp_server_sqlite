@@ -21,6 +21,9 @@ dependencies = [
     # libSQL client for database connectivity
     "libsql>=0.1.11",
     
+    # SQLite Cloud for cloud database connectivity
+    "sqlitecloud>=0.0.80",
+    
     # Fix for docutils metadata issue
     "docutils>=0.20.0,<0.22.0",
 ]
