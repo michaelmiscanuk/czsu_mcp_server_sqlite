@@ -3,18 +3,20 @@
 if not exist ".venv" (
     echo Creating new virtual environment...
     uv venv --python 3.11.9
-    echo Installing dependencies for the first time...
+    echo Installing backend dependencies for the first time...
+    echo Installing/Updating backend packages...
+    uv pip install --python .venv .
+    uv pip install --python .venv .[dev]
 ) else (
-    echo Virtual environment already exists, checking for updates...
+    echo Virtual environment already exists, removing and recreating to avoid corruption...
+    rmdir /s /q .venv
+    echo Creating new virtual environment...
+    uv venv --python 3.11.9
+    echo Installing backend dependencies...
+    echo Installing/Updating backend packages...
+    uv pip install --python .venv .
+    uv pip install --python .venv .[dev]
 )
-
-echo Activating venv...
-call .venv\Scripts\activate
-
-echo Installing/Updating packages...
-uv pip install .
-uv pip install .[dev]
-pip install -e .
 
 echo Checking environment file...
 if not exist ".vscode" mkdir .vscode
@@ -45,10 +47,3 @@ echo Setup complete!
 echo ✅ VS Code settings configured automatically
 echo ✅ Virtual environment ready
 echo ✅ SQLite Cloud dependency installed
-echo.
-echo To run the server:
-echo   python main.py
-echo.
-echo Note: Make sure your .env file has the correct SQLite Cloud connection string
-echo.
-pause

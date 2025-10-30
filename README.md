@@ -157,10 +157,14 @@ DEBUG=0                            # Debug mode   - Authentication: Enable or di
 
 ## Dependencies
 
+Core dependencies:
 - `fastmcp>=2.0.0` - MCP server framework
 - `python-dotenv>=1.0.0` - Environment variables
 - `starlette>=0.45.0` - Web framework
-- `sqlitecloud>=1.0.0` - SQLite Cloud connectivity
+
+Database backends (install as needed):
+- `sqlitecloud>=0.0.80` - SQLite Cloud connectivity (`pip install .[sqlitecloud]`)
+- `libsql-client>=0.5.0` - Turso (libSQL) connectivity (`pip install .[turso]`)
 
    ```
 
@@ -233,7 +237,9 @@ Part of the CZSU Multi-Agent Text-to-SQL project.  - Handles all MCP protocol op
 ## Environment Variables
 
 - `PORT` - Server port (default: 8100)
-- `SQLITE_CLOUD_CONNECTION_STRING` - SQLite Cloud connection string (required)
+- `DATABASE_TYPE` - Database backend type: `sqlitecloud` or `turso` (default: sqlitecloud)
+- `SQLITE_CLOUD_CONNECTION_STRING` - SQLite Cloud connection string (required when DATABASE_TYPE=sqlitecloud)
+- `TURSO_CONNECTION_STRING` - Turso connection string (required when DATABASE_TYPE=turso)
 - `DEBUG` - Enable debug logging (default: 0)
 
 ## Testing
