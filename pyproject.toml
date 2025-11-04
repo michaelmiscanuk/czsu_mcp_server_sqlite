@@ -18,13 +18,27 @@ dependencies = [
     # Starlette for custom routes (included with FastMCP but explicit for clarity)
     "starlette>=0.45.0",
     
+    # libSQL client for database connectivity
+    "libsql>=0.1.11",
+    
     # SQLite Cloud for cloud database connectivity
     "sqlitecloud>=0.0.80",
+    
+    # Fix for docutils metadata issue
+    "docutils>=0.20.0,<0.22.0",
 ]
 
 # SQLite is built into Python, no extra dependency needed
 
 [project.optional-dependencies]
+sqlitecloud = [
+    # SQLite Cloud for cloud database connectivity
+    "sqlitecloud>=0.0.80",
+]
+turso = [
+    # Turso (libSQL) for distributed SQLite database connectivity
+    "libsql>=0.3.0",
+]
 dev = [
     # Development and testing
     "pytest>=7.0.0",

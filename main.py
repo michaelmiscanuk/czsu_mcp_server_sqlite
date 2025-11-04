@@ -31,9 +31,9 @@ Environment Variables:
 """
 
 import os
-import sqlitecloud
 import asyncio
 import json
+import urllib.parse
 
 from dotenv import load_dotenv
 from fastmcp import FastMCP, Context
@@ -44,7 +44,9 @@ load_dotenv()
 
 # Configuration
 PORT = int(os.getenv("PORT", "8100"))
+DATABASE_TYPE = os.getenv("DATABASE_TYPE", "turso").lower()
 SQLITE_CLOUD_CONNECTION_STRING = os.getenv("SQLITE_CLOUD_CONNECTION_STRING", "")
+TURSO_CONNECTION_STRING = os.getenv("TURSO_CONNECTION_STRING", "")
 DEBUG = int(os.getenv("DEBUG", "0"))
 TRANSPORT = os.getenv(
     "TRANSPORT", "streamable-http"
@@ -54,7 +56,7 @@ TRANSPORT = os.getenv(
 mcp = FastMCP(
     name="CZSU-SQLite-Server",
     instructions="""
-        This server provides access to the CZSU (Czech Statistical Office) SQLite Cloud database.
+        This server provides access to the CZSU (Czech Statistical Office) SQLite database.
         Use the sqlite_query tool to execute SQL queries against the database.
         The database contains Czech statistical data organized in various tables.
         
@@ -63,18 +65,66 @@ mcp = FastMCP(
 )
 
 
-def get_db_connection():
+def get_sqlitecloud_connection():
     """Get a connection to the SQLite Cloud database."""
     if not SQLITE_CLOUD_CONNECTION_STRING:
         raise ValueError(
-            "SQLITE_CLOUD_CONNECTION_STRING environment variable is required"
+            "SQLITE_CLOUD_CONNECTION_STRING environment variable is required for SQLite Cloud"
         )
 
     try:
+        import sqlitecloud
+
         connection = sqlitecloud.connect(SQLITE_CLOUD_CONNECTION_STRING)
         return connection
+    except ImportError:
+        raise ImportError(
+            "sqlitecloud package is required for SQLite Cloud connections. Install with: pip install sqlitecloud"
+        )
     except Exception as e:
         raise ConnectionError(f"Failed to connect to SQLite Cloud: {e}") from e
+
+
+def get_turso_connection():
+    """Get a connection to the Turso database."""
+    if not TURSO_CONNECTION_STRING:
+        raise ValueError(
+            "TURSO_CONNECTION_STRING environment variable is required for Turso"
+        )
+
+    try:
+        import libsql
+
+        # Parse the connection string to extract URL and auth token
+        parsed = urllib.parse.urlparse(TURSO_CONNECTION_STRING)
+        query_params = urllib.parse.parse_qs(parsed.query)
+        auth_token = query_params.get("authToken", [None])[0]
+
+        # Reconstruct URL without query parameters
+        url = urllib.parse.urlunparse(parsed._replace(query=""))
+
+        connection = libsql.connect(
+            url, auth_token=auth_token
+        )  # pylint: disable=no-member
+        return connection
+    except ImportError:
+        raise ImportError(
+            "libsql package is required for Turso connections. Install with: pip install libsql"
+        )
+    except Exception as e:
+        raise ConnectionError(f"Failed to connect to Turso: {e}") from e
+
+
+def get_db_connection():
+    """Get a connection to the configured database."""
+    if DATABASE_TYPE == "sqlitecloud":
+        return get_sqlitecloud_connection()
+    elif DATABASE_TYPE == "turso":
+        return get_turso_connection()
+    else:
+        raise ValueError(
+            f"Unsupported DATABASE_TYPE: {DATABASE_TYPE}. Supported types: sqlitecloud, turso"
+        )
 
 
 @mcp.tool()
@@ -106,12 +156,19 @@ async def sqlite_query(query: str, ctx: Context) -> str:
     def _execute_query(q):
         db_connection = get_db_connection()
         try:
-            with db_connection:
-                cursor = db_connection.cursor()
-                cursor.execute(q)
+            if DATABASE_TYPE == "turso":
+                # For libsql, execute returns a cursor
+                cursor = db_connection.execute(q)
                 result = cursor.fetchall()
+            else:
+                # For sqlitecloud
+                with db_connection:
+                    cursor = db_connection.cursor()
+                    cursor.execute(q)
+                    result = cursor.fetchall()
         finally:
-            db_connection.close()
+            if DATABASE_TYPE != "turso":
+                db_connection.close()
         return result
 
     # Execute query in thread
@@ -139,10 +196,14 @@ async def health_check(_request):
     try:
         health_connection = get_db_connection()
         # Try a simple query to verify database is accessible
-        with health_connection:
-            cursor = health_connection.cursor()
-            cursor.execute("SELECT 1")
+        if DATABASE_TYPE == "turso":
+            cursor = health_connection.execute("SELECT 1")
             cursor.fetchone()
+        else:
+            with health_connection:
+                cursor = health_connection.cursor()
+                cursor.execute("SELECT 1")
+                cursor.fetchone()
 
         return JSONResponse(
             {
@@ -153,7 +214,7 @@ async def health_check(_request):
                 "langchain_compatible": True,
             }
         )
-    except (ValueError, ConnectionError, sqlitecloud.Error) as e:
+    except (ValueError, ConnectionError, ImportError) as e:
         return JSONResponse(
             {
                 "status": "unhealthy",
@@ -194,7 +255,7 @@ if __name__ == "__main__":
         # Test database connection
         test_connection = get_db_connection()
         test_connection.close()
-        print("✓ SQLite Cloud connection successful")
+        print(f"✓ {DATABASE_TYPE.title()} connection successful")
         print(f"✓ Server port: {PORT}")
         print(f"✓ Debug mode: {'ON' if DEBUG else 'OFF'}")
         print(f"✓ Transport: {TRANSPORT}")
